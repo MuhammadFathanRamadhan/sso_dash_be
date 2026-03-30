@@ -1,0 +1,2 @@
+  Catatan penting: Setiap kali ada perubahan pada anotasi handler, jalankan ulang:
+  swag init -g cmd/main.go -o docs

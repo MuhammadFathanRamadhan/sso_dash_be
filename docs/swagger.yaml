@@ -1,0 +1,630 @@
+basePath: /
+definitions:
+  handlers.ConnectAppRequest:
+    properties:
+      slug:
+        example: my-app
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: detail error
+        type: string
+      message:
+        example: Terjadi kesalahan
+        type: string
+    type: object
+  handlers.MessageResponse:
+    properties:
+      message:
+        example: Berhasil
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        example: fathan@example.com
+        type: string
+      name:
+        example: Muhammad Fathan Ramadhan
+        type: string
+      phone:
+        example: "08123456789"
+        type: string
+    type: object
+  handlers.RequestOtpRequest:
+    properties:
+      email:
+        example: fathan@example.com
+        type: string
+    type: object
+  services.DeviceInfo:
+    properties:
+      deviceName:
+        type: string
+      deviceType:
+        type: string
+      osName:
+        type: string
+      osVersion:
+        type: string
+    type: object
+  services.UserPreview:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
+  services.VerifyOtpRequest:
+    properties:
+      deviceInfo:
+        $ref: '#/definitions/services.DeviceInfo'
+      email:
+        type: string
+      otp:
+        type: string
+    type: object
+  services.VerifyOtpResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/services.UserPreview'
+    type: object
+host: localhost:4000
+info:
+  contact: {}
+  description: REST API untuk sistem Single Sign-On Dashboard BOMA
+  title: Dashboard SSO API
+  version: "1.0"
+paths:
+  /auth/alerts:
+    get:
+      description: Mengembalikan riwayat notifikasi aktivitas login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Daftar notifikasi login
+      tags:
+      - Alerts
+  /auth/alerts/{id}/read:
+    patch:
+      description: Menandai notifikasi tertentu sebagai sudah dibaca
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tandai notifikasi sudah dibaca
+      tags:
+      - Alerts
+  /auth/alerts/clear:
+    patch:
+      description: Menghapus seluruh riwayat notifikasi login pengguna
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hapus semua notifikasi
+      tags:
+      - Alerts
+  /auth/apps:
+    get:
+      description: Mengembalikan semua aplikasi yang terhubung dengan akun pengguna
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Daftar aplikasi terhubung
+      tags:
+      - Apps
+  /auth/apps/{slug}/disconnect:
+    post:
+      description: Memutuskan koneksi akun pengguna dari aplikasi
+      parameters:
+      - description: Slug aplikasi
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Putuskan koneksi aplikasi
+      tags:
+      - Apps
+  /auth/apps/{slug}/log-access:
+    post:
+      description: Mencatat log aktivitas akses pengguna ke aplikasi
+      parameters:
+      - description: Slug aplikasi
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Catat akses aplikasi
+      tags:
+      - Apps
+  /auth/apps/connect:
+    post:
+      consumes:
+      - application/json
+      description: Menghubungkan akun pengguna dengan aplikasi berdasarkan slug
+      parameters:
+      - description: Slug aplikasi
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ConnectAppRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hubungkan ke aplikasi
+      tags:
+      - Apps
+  /auth/confirm-delete:
+    get:
+      description: Mengkonfirmasi penghapusan akun melalui token dari email (mengembalikan
+        halaman HTML)
+      parameters:
+      - description: Token konfirmasi dari email
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Halaman HTML konfirmasi
+          schema:
+            type: string
+        "400":
+          description: Halaman HTML error
+          schema:
+            type: string
+      summary: Konfirmasi penghapusan akun
+      tags:
+      - Account
+  /auth/logout:
+    post:
+      description: Mengakhiri sesi login yang sedang aktif
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout sesi saat ini
+      tags:
+      - Sessions
+  /auth/logout-others:
+    post:
+      description: Mengakhiri semua sesi login kecuali sesi saat ini
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout semua perangkat lain
+      tags:
+      - Sessions
+  /auth/me:
+    get:
+      description: Mengembalikan data profil pengguna yang sedang login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Profil pengguna saat ini
+      tags:
+      - Profile
+  /auth/recent-activity:
+    get:
+      description: Mengembalikan log aktivitas terbaru pengguna lintas aplikasi
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Aktivitas terbaru
+      tags:
+      - Apps
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Membuat akun pengguna baru dengan nama, email, dan nomor telepon
+      parameters:
+      - description: Data registrasi
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Daftarkan akun baru
+      tags:
+      - Auth
+  /auth/request-delete:
+    post:
+      description: Mengirimkan email konfirmasi untuk penghapusan akun permanen
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Minta penghapusan akun
+      tags:
+      - Account
+  /auth/request-otp:
+    post:
+      consumes:
+      - application/json
+      description: Mengirimkan kode OTP ke alamat email yang terdaftar
+      parameters:
+      - description: Email terdaftar
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RequestOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Kirim OTP ke email
+      tags:
+      - Auth
+  /auth/sessions:
+    get:
+      description: Mengembalikan semua sesi login yang sedang aktif
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Daftar sesi aktif
+      tags:
+      - Sessions
+  /auth/sessions/{id}/logout:
+    post:
+      description: Mengakhiri sesi login berdasarkan ID sesi
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout sesi tertentu
+      tags:
+      - Sessions
+  /auth/stats:
+    get:
+      description: Mengembalikan statistik aktivitas pengguna
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Statistik pengguna
+      tags:
+      - Profile
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Memverifikasi kode OTP dan mengembalikan JWT token sesi
+      parameters:
+      - description: Email, OTP, dan info perangkat
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/services.VerifyOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.VerifyOtpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Verifikasi OTP dan login
+      tags:
+      - Auth
+securityDefinitions:
+  BearerAuth:
+    description: 'Masukkan token dengan format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
