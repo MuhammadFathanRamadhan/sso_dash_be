@@ -844,7 +844,12 @@ func (s *AuthService) SaveSecurityQuestions(userID string, req SaveSecurityQuest
 	return s.db.Create(&questions).Error
 }
 
-func (s *AuthService) GetSecurityQuestions(email string) ([]SecurityQuestionItem, error) {
+type SecurityQuestionsResponse struct {
+	User      UserPreview            `json:"user"`
+	Questions []SecurityQuestionItem `json:"questions"`
+}
+
+func (s *AuthService) GetSecurityQuestions(email string) (*SecurityQuestionsResponse, error) {
 	if email == "" {
 		return nil, appErr(400, "Email wajib diisi")
 	}
@@ -852,6 +857,9 @@ func (s *AuthService) GetSecurityQuestions(email string) ([]SecurityQuestionItem
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
 		return nil, appErr(404, "Email tidak ditemukan")
+	}
+	if !user.IsVerified {
+		return nil, appErr(403, "Akun belum diverifikasi")
 	}
 
 	var questions []models.SecurityQuestion
@@ -863,11 +871,20 @@ func (s *AuthService) GetSecurityQuestions(email string) ([]SecurityQuestionItem
 		return nil, appErr(404, "Pertanyaan keamanan belum diatur")
 	}
 
-	result := make([]SecurityQuestionItem, len(questions))
+	items := make([]SecurityQuestionItem, len(questions))
 	for i, q := range questions {
-		result[i] = SecurityQuestionItem{ID: q.ID, Question: q.Question}
+		items[i] = SecurityQuestionItem{ID: q.ID, Question: q.Question}
 	}
-	return result, nil
+
+	phone := ""
+	if user.Phone != nil {
+		phone = *user.Phone
+	}
+
+	return &SecurityQuestionsResponse{
+		User:      UserPreview{Name: user.Name, Email: user.Email, Phone: phone},
+		Questions: items,
+	}, nil
 }
 
 type VerifySecurityAnswersRequest struct {

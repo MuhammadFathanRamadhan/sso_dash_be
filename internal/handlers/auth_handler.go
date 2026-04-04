@@ -292,11 +292,11 @@ func (h *AuthHandler) SaveSecurityQuestions(c *fiber.Ctx) error {
 // @Router       /auth/security-questions [get]
 func (h *AuthHandler) GetSecurityQuestions(c *fiber.Ctx) error {
 	email := c.Query("email")
-	questions, err := h.svc.GetSecurityQuestions(email)
+	result, err := h.svc.GetSecurityQuestions(email)
 	if err != nil {
 		return handleErr(c, err, "Gagal mengambil pertanyaan keamanan")
 	}
-	return c.JSON(fiber.Map{"questions": questions})
+	return c.JSON(result)
 }
 
 // ──────────────────────────────────────────────────
