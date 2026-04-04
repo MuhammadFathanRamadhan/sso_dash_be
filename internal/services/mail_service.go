@@ -97,6 +97,18 @@ func SendOtpEmail(to, otp string) error {
 	return sendMail(to, "Kode OTP Login - BOMA SSO", body)
 }
 
+func SendRegisterOtpEmail(to, otp string) error {
+	body := fmt.Sprintf(`
+		<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:24px;border:1px solid #e0e0e0;border-radius:8px">
+			<h2 style="color:#103B74;margin-bottom:8px">Verifikasi Email BOMA SSO</h2>
+			<p>Terima kasih telah mendaftar! Gunakan kode OTP berikut untuk memverifikasi email Anda:</p>
+			<div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#103B74;margin:16px 0">%s</div>
+			<p style="color:#666;font-size:13px">Kode berlaku selama <strong>5 menit</strong>.<br/>Jangan bagikan kode ini kepada siapapun.</p>
+		</div>
+	`, otp)
+	return sendMail(to, "Verifikasi Email - BOMA SSO", body)
+}
+
 func SendDeleteConfirmationEmail(to, name, confirmURL string) error {
 	body := fmt.Sprintf(`
 		<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #e0e0e0;border-radius:10px">

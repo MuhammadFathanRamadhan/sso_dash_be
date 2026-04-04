@@ -211,3 +211,25 @@ func (u *UserAppAccess) BeforeCreate(_ *gorm.DB) error {
 }
 
 func (UserAppAccess) TableName() string { return "user_app_access" }
+
+// ───────────��──────────────────────────────────────
+// 9. SecurityQuestion
+// ──────────────────────────────────────────────────
+
+type SecurityQuestion struct {
+	ID         string    `gorm:"type:varchar(36);primaryKey"                    json:"id"`
+	UserID     string    `gorm:"type:varchar(36);column:user_id;not null;index" json:"user_id"`
+	Question   string    `gorm:"type:text;not null"                             json:"question"`
+	AnswerHash string    `gorm:"column:answer_hash;type:varchar(255);not null"  json:"-"`
+	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"               json:"created_at"`
+	UpdatedAt  time.Time `gorm:"column:updated_at;autoUpdateTime"               json:"updated_at"`
+}
+
+func (s *SecurityQuestion) BeforeCreate(_ *gorm.DB) error {
+	if s.ID == "" {
+		s.ID = newUUID()
+	}
+	return nil
+}
+
+func (SecurityQuestion) TableName() string { return "security_questions" }

@@ -135,8 +135,22 @@ func (s *AuthService) Register(name, email, phone string) (*RegisterResponse, er
 		return nil, appErr(400, "Nomor telepon tidak valid (8-15 digit)")
 	}
 
-	if _, err := s.userRepo.FindByEmail(email); err == nil {
-		return nil, appErr(409, "Email sudah terdaftar")
+	existing, err := s.userRepo.FindByEmail(email)
+	if err == nil {
+		if existing.IsVerified {
+			return nil, appErr(409, "Email sudah terdaftar")
+		}
+		// User ada tapi belum verified → update data & kirim ulang OTP
+		s.db.Model(existing).Updates(map[string]interface{}{
+			"name":  name,
+			"phone": &phone,
+		})
+		otpCode, err := s.otpSvc.CreateOtp(email)
+		if err != nil {
+			return nil, err
+		}
+		go SendRegisterOtpEmail(email, otpCode)
+		return &RegisterResponse{ID: existing.ID, Name: name, Email: email}, nil
 	}
 
 	user, err := s.userRepo.CreateUser(name, email, phone)
@@ -144,9 +158,68 @@ func (s *AuthService) Register(name, email, phone string) (*RegisterResponse, er
 		return nil, err
 	}
 
+	// Kirim OTP untuk verifikasi email
+	otpCode, err := s.otpSvc.CreateOtp(email)
+	if err != nil {
+		return nil, err
+	}
+	go SendRegisterOtpEmail(email, otpCode)
+
 	go s.autoConnectBomaSSO(user.ID)
 
 	return &RegisterResponse{ID: user.ID, Name: user.Name, Email: user.Email}, nil
+}
+
+// ──────────────────────────────────────────────────
+// Verify Register OTP
+// ──────────────────────────────────────────────────
+
+func (s *AuthService) VerifyRegisterOtp(email, otp string) error {
+	if email == "" || otp == "" {
+		return appErr(400, "Email dan OTP wajib diisi")
+	}
+
+	result := s.otpSvc.VerifyOtp(email, otp)
+	if !result.OK {
+		return appErr(result.Status, result.Message)
+	}
+
+	user, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return appErr(404, "User tidak ditemukan")
+	}
+
+	return s.db.Model(user).Update("is_verified", true).Error
+}
+
+// ──────────────────────────────────────────────────
+// Resend Register OTP
+// ──────────────────────────────────────────────────
+
+func (s *AuthService) ResendRegisterOtp(email string) error {
+	if email == "" {
+		return appErr(400, "Email wajib diisi")
+	}
+
+	user, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return appErr(404, "Email tidak ditemukan")
+	}
+	if user.IsVerified {
+		return appErr(400, "Email sudah terverifikasi")
+	}
+
+	existing, _ := s.otpSvc.GetOtpData(email)
+	if !CanRequestOtp(existing) {
+		return appErr(429, "Silakan tunggu 1 menit sebelum minta OTP baru")
+	}
+
+	otpCode, err := s.otpSvc.CreateOtp(email)
+	if err != nil {
+		return err
+	}
+
+	return SendRegisterOtpEmail(email, otpCode)
 }
 
 // ──────────────────────────────────────────────────
@@ -167,6 +240,9 @@ func (s *AuthService) RequestOtp(email string) (*UserPreview, error) {
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
 		return nil, appErr(404, "Email belum terdaftar. Silakan buat akun terlebih dahulu.")
+	}
+	if !user.IsVerified {
+		return nil, appErr(403, "Email belum diverifikasi. Silakan verifikasi email Anda terlebih dahulu.")
 	}
 
 	existing, _ := s.otpSvc.GetOtpData(email)

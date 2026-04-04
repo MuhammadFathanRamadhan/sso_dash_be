@@ -29,6 +29,8 @@ func Setup(app *fiber.App, h *handlers.AuthHandler) {
 
 	// ── Public ──────────────────────────────────────
 	auth.Post("/register", authLimiter, h.Register)
+	auth.Post("/verify-register-otp", authLimiter, h.VerifyRegisterOtp)
+	auth.Post("/resend-register-otp", authLimiter, h.ResendRegisterOtp)
 	auth.Post("/request-otp", authLimiter, h.RequestOtp)
 	auth.Post("/verify-otp", authLimiter, h.VerifyOtp)
 	auth.Get("/confirm-delete", h.ConfirmDelete)

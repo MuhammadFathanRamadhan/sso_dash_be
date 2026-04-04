@@ -23,6 +23,15 @@ type RequestOtpRequest struct {
 	Email string `json:"email" example:"fathan@example.com"`
 }
 
+type VerifyRegisterOtpRequest struct {
+	Email string `json:"email" example:"fathan@example.com"`
+	Otp   string `json:"otp"   example:"1234"`
+}
+
+type ResendRegisterOtpRequest struct {
+	Email string `json:"email" example:"fathan@example.com"`
+}
+
 type ConnectAppRequest struct {
 	Slug string `json:"slug" example:"my-app"`
 }
@@ -89,6 +98,62 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return handleErr(c, err, "Gagal membuat akun")
 	}
 	return c.Status(201).JSON(fiber.Map{"message": "Akun berhasil dibuat", "user": user})
+}
+
+// ──────────────────────────────────────────────────
+// POST /auth/verify-register-otp
+// ──────────────────────────────────────────────────
+
+// VerifyRegisterOtp godoc
+// @Summary      Verifikasi OTP registrasi
+// @Description  Memverifikasi kode OTP yang dikirim saat registrasi untuk mengaktifkan akun
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      VerifyRegisterOtpRequest  true  "Email dan OTP"
+// @Success      200   {object}  MessageResponse
+// @Failure      400   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse
+// @Failure      429   {object}  ErrorResponse
+// @Router       /auth/verify-register-otp [post]
+func (h *AuthHandler) VerifyRegisterOtp(c *fiber.Ctx) error {
+	var body VerifyRegisterOtpRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"message": "Request body tidak valid"})
+	}
+
+	if err := h.svc.VerifyRegisterOtp(body.Email, body.Otp); err != nil {
+		return handleErr(c, err, "Gagal verifikasi OTP")
+	}
+	return c.JSON(fiber.Map{"message": "Email berhasil diverifikasi"})
+}
+
+// ──────────────────────────────────────────────────
+// POST /auth/resend-register-otp
+// ──────────────────────────────────────────────────
+
+// ResendRegisterOtp godoc
+// @Summary      Kirim ulang OTP registrasi
+// @Description  Mengirim ulang kode OTP untuk verifikasi email saat registrasi
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      ResendRegisterOtpRequest  true  "Email"
+// @Success      200   {object}  MessageResponse
+// @Failure      400   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse
+// @Failure      429   {object}  ErrorResponse
+// @Router       /auth/resend-register-otp [post]
+func (h *AuthHandler) ResendRegisterOtp(c *fiber.Ctx) error {
+	var body ResendRegisterOtpRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"message": "Request body tidak valid"})
+	}
+
+	if err := h.svc.ResendRegisterOtp(body.Email); err != nil {
+		return handleErr(c, err, "Gagal kirim ulang OTP")
+	}
+	return c.JSON(fiber.Map{"message": "OTP verifikasi terkirim"})
 }
 
 // ──────────────────────────────────────────────────
