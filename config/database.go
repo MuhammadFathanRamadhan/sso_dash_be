@@ -43,6 +43,7 @@ func GetDB() *gorm.DB {
 			&models.ConnectedApp{},
 			&models.AppActivityLog{},
 			&models.UserAppAccess{},
+			&models.SecurityQuestion{},
 		); err != nil {
 			db.Exec("SET FOREIGN_KEY_CHECKS=1")
 			log.Fatalf("AutoMigrate gagal: %v", err)

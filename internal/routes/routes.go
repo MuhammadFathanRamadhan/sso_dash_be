@@ -33,6 +33,9 @@ func Setup(app *fiber.App, h *handlers.AuthHandler) {
 	auth.Post("/resend-register-otp", authLimiter, h.ResendRegisterOtp)
 	auth.Post("/request-otp", authLimiter, h.RequestOtp)
 	auth.Post("/verify-otp", authLimiter, h.VerifyOtp)
+	auth.Post("/security-questions", h.SaveSecurityQuestions)
+	auth.Get("/security-questions", h.GetSecurityQuestions)
+	auth.Post("/verify-security-answers", authLimiter, h.VerifySecurityAnswers)
 	auth.Get("/confirm-delete", h.ConfirmDelete)
 
 	// ── Protected ───────────────────────────────────

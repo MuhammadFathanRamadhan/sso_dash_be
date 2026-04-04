@@ -32,6 +32,24 @@ type ResendRegisterOtpRequest struct {
 	Email string `json:"email" example:"fathan@example.com"`
 }
 
+type SaveSecurityQuestionsRequest struct {
+	Email     string `json:"email"     example:"fathan@example.com"`
+	Question1 string `json:"question1" example:"Di kota mana Anda lahir?"`
+	Answer1   string `json:"answer1"   example:"Jakarta"`
+	Question2 string `json:"question2" example:"Apa nama hewan peliharaan pertama Anda?"`
+	Answer2   string `json:"answer2"   example:"Milo"`
+}
+
+type GetSecurityQuestionsRequest struct {
+	Email string `json:"email" example:"fathan@example.com"`
+}
+
+type VerifySecurityAnswersRequest struct {
+	Email   string `json:"email"   example:"fathan@example.com"`
+	Answer1 string `json:"answer1" example:"Jakarta"`
+	Answer2 string `json:"answer2" example:"Milo"`
+}
+
 type ConnectAppRequest struct {
 	Slug string `json:"slug" example:"my-app"`
 }
@@ -218,6 +236,99 @@ func (h *AuthHandler) VerifyOtp(c *fiber.Ctx) error {
 		return handleErr(c, err, "Gagal verifikasi OTP")
 	}
 	return c.JSON(result)
+}
+
+// ──────────────────────────────────────────────────
+// POST /auth/security-questions
+// ──────────────────────────────────────────────────
+
+// SaveSecurityQuestions godoc
+// @Summary      Simpan pertanyaan keamanan
+// @Description  Menyimpan 2 pertanyaan keamanan untuk pemulihan akun (digunakan setelah registrasi)
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      SaveSecurityQuestionsRequest  true  "Pertanyaan dan jawaban keamanan"
+// @Success      200   {object}  MessageResponse
+// @Failure      400   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse
+// @Router       /auth/security-questions [post]
+func (h *AuthHandler) SaveSecurityQuestions(c *fiber.Ctx) error {
+	var body SaveSecurityQuestionsRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"message": "Request body tidak valid"})
+	}
+
+	// Cari user berdasarkan email
+	user, err := h.svc.FindUserByEmail(body.Email)
+	if err != nil {
+		return handleErr(c, err, "User tidak ditemukan")
+	}
+
+	if err := h.svc.SaveSecurityQuestions(user.ID, services.SaveSecurityQuestionsRequest{
+		Question1: body.Question1,
+		Answer1:   body.Answer1,
+		Question2: body.Question2,
+		Answer2:   body.Answer2,
+	}); err != nil {
+		return handleErr(c, err, "Gagal menyimpan pertanyaan keamanan")
+	}
+	return c.JSON(fiber.Map{"message": "Pertanyaan keamanan berhasil disimpan"})
+}
+
+// ──────────────────────────────────────────────────
+// GET /auth/security-questions
+// ──────────────────────────────────────────────────
+
+// GetSecurityQuestions godoc
+// @Summary      Ambil pertanyaan keamanan
+// @Description  Mengambil pertanyaan keamanan user berdasarkan email (tanpa jawaban)
+// @Tags         Auth
+// @Produce      json
+// @Param        email  query     string  true  "Email pengguna"
+// @Success      200    {object}  map[string]interface{}
+// @Failure      400    {object}  ErrorResponse
+// @Failure      404    {object}  ErrorResponse
+// @Router       /auth/security-questions [get]
+func (h *AuthHandler) GetSecurityQuestions(c *fiber.Ctx) error {
+	email := c.Query("email")
+	questions, err := h.svc.GetSecurityQuestions(email)
+	if err != nil {
+		return handleErr(c, err, "Gagal mengambil pertanyaan keamanan")
+	}
+	return c.JSON(fiber.Map{"questions": questions})
+}
+
+// ──────────────────────────────────────────────────
+// POST /auth/verify-security-answers
+// ──────────────────────────────────────────────────
+
+// VerifySecurityAnswers godoc
+// @Summary      Verifikasi jawaban keamanan
+// @Description  Memverifikasi jawaban pertanyaan keamanan untuk pemulihan akun
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      VerifySecurityAnswersRequest  true  "Email dan jawaban"
+// @Success      200   {object}  MessageResponse
+// @Failure      400   {object}  ErrorResponse
+// @Failure      401   {object}  ErrorResponse
+// @Failure      404   {object}  ErrorResponse
+// @Router       /auth/verify-security-answers [post]
+func (h *AuthHandler) VerifySecurityAnswers(c *fiber.Ctx) error {
+	var body VerifySecurityAnswersRequest
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{"message": "Request body tidak valid"})
+	}
+
+	if err := h.svc.VerifySecurityAnswers(services.VerifySecurityAnswersRequest{
+		Email:   body.Email,
+		Answer1: body.Answer1,
+		Answer2: body.Answer2,
+	}); err != nil {
+		return handleErr(c, err, "Verifikasi gagal")
+	}
+	return c.JSON(fiber.Map{"message": "Jawaban keamanan benar"})
 }
 
 // ──────────────────────────────────────────────────

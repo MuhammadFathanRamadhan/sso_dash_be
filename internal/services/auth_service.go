@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -112,6 +113,18 @@ func NewAuthService(
 		delTokenRepo: delTokenRepo,
 		otpSvc:       otpSvc,
 	}
+}
+
+// ──────────────────────────────────────────────────
+// Find User by Email (helper for handlers)
+// ──────────────────────────────────────────────────
+
+func (s *AuthService) FindUserByEmail(email string) (*models.User, error) {
+	user, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return nil, appErr(404, "User tidak ditemukan")
+	}
+	return user, nil
 }
 
 // ──────────────────────────────────────────────────
@@ -785,6 +798,111 @@ func (s *AuthService) GetRecentActivity(userID string) ([]ActivityItem, error) {
 		result[i].App.Slug = l.App.Slug
 	}
 	return result, nil
+}
+
+// ──────────────────────────────────────────────────
+// Security Questions
+// ──────────────────────────────────────────────────
+
+type SaveSecurityQuestionsRequest struct {
+	Question1 string `json:"question1"`
+	Answer1   string `json:"answer1"`
+	Question2 string `json:"question2"`
+	Answer2   string `json:"answer2"`
+}
+
+type SecurityQuestionItem struct {
+	ID       string `json:"id"`
+	Question string `json:"question"`
+}
+
+func (s *AuthService) SaveSecurityQuestions(userID string, req SaveSecurityQuestionsRequest) error {
+	if req.Question1 == "" || req.Answer1 == "" || req.Question2 == "" || req.Answer2 == "" {
+		return appErr(400, "Semua pertanyaan dan jawaban wajib diisi")
+	}
+	if req.Question1 == req.Question2 {
+		return appErr(400, "Pertanyaan keamanan tidak boleh sama")
+	}
+
+	hash1, err := bcrypt.GenerateFromPassword([]byte(strings.ToLower(strings.TrimSpace(req.Answer1))), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	hash2, err := bcrypt.GenerateFromPassword([]byte(strings.ToLower(strings.TrimSpace(req.Answer2))), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// Hapus pertanyaan lama jika ada
+	s.db.Where("user_id = ?", userID).Delete(&models.SecurityQuestion{})
+
+	// Simpan 2 pertanyaan baru
+	questions := []models.SecurityQuestion{
+		{UserID: userID, Question: req.Question1, AnswerHash: string(hash1)},
+		{UserID: userID, Question: req.Question2, AnswerHash: string(hash2)},
+	}
+	return s.db.Create(&questions).Error
+}
+
+func (s *AuthService) GetSecurityQuestions(email string) ([]SecurityQuestionItem, error) {
+	if email == "" {
+		return nil, appErr(400, "Email wajib diisi")
+	}
+
+	user, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return nil, appErr(404, "Email tidak ditemukan")
+	}
+
+	var questions []models.SecurityQuestion
+	if err := s.db.Where("user_id = ?", user.ID).Order("created_at ASC").Find(&questions).Error; err != nil {
+		return nil, err
+	}
+
+	if len(questions) == 0 {
+		return nil, appErr(404, "Pertanyaan keamanan belum diatur")
+	}
+
+	result := make([]SecurityQuestionItem, len(questions))
+	for i, q := range questions {
+		result[i] = SecurityQuestionItem{ID: q.ID, Question: q.Question}
+	}
+	return result, nil
+}
+
+type VerifySecurityAnswersRequest struct {
+	Email   string `json:"email"`
+	Answer1 string `json:"answer1"`
+	Answer2 string `json:"answer2"`
+}
+
+func (s *AuthService) VerifySecurityAnswers(req VerifySecurityAnswersRequest) error {
+	if req.Email == "" || req.Answer1 == "" || req.Answer2 == "" {
+		return appErr(400, "Email dan semua jawaban wajib diisi")
+	}
+
+	user, err := s.userRepo.FindByEmail(req.Email)
+	if err != nil {
+		return appErr(404, "Email tidak ditemukan")
+	}
+
+	var questions []models.SecurityQuestion
+	if err := s.db.Where("user_id = ?", user.ID).Order("created_at ASC").Find(&questions).Error; err != nil {
+		return err
+	}
+
+	if len(questions) < 2 {
+		return appErr(404, "Pertanyaan keamanan belum diatur")
+	}
+
+	err1 := bcrypt.CompareHashAndPassword([]byte(questions[0].AnswerHash), []byte(strings.ToLower(strings.TrimSpace(req.Answer1))))
+	err2 := bcrypt.CompareHashAndPassword([]byte(questions[1].AnswerHash), []byte(strings.ToLower(strings.TrimSpace(req.Answer2))))
+
+	if err1 != nil || err2 != nil {
+		return appErr(401, "Jawaban keamanan salah")
+	}
+
+	return nil
 }
 
 // ──────────────────────────────────────────────────

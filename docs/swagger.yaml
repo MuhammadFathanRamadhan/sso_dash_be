@@ -39,6 +39,51 @@ definitions:
         example: fathan@example.com
         type: string
     type: object
+  handlers.ResendRegisterOtpRequest:
+    properties:
+      email:
+        example: fathan@example.com
+        type: string
+    type: object
+  handlers.SaveSecurityQuestionsRequest:
+    properties:
+      answer1:
+        example: Jakarta
+        type: string
+      answer2:
+        example: Milo
+        type: string
+      email:
+        example: fathan@example.com
+        type: string
+      question1:
+        example: Di kota mana Anda lahir?
+        type: string
+      question2:
+        example: Apa nama hewan peliharaan pertama Anda?
+        type: string
+    type: object
+  handlers.VerifyRegisterOtpRequest:
+    properties:
+      email:
+        example: fathan@example.com
+        type: string
+      otp:
+        example: "1234"
+        type: string
+    type: object
+  handlers.VerifySecurityAnswersRequest:
+    properties:
+      answer1:
+        example: Jakarta
+        type: string
+      answer2:
+        example: Milo
+        type: string
+      email:
+        example: fathan@example.com
+        type: string
+    type: object
   services.DeviceInfo:
     properties:
       deviceName:
@@ -504,6 +549,98 @@ paths:
       summary: Kirim OTP ke email
       tags:
       - Auth
+  /auth/resend-register-otp:
+    post:
+      consumes:
+      - application/json
+      description: Mengirim ulang kode OTP untuk verifikasi email saat registrasi
+      parameters:
+      - description: Email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ResendRegisterOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Kirim ulang OTP registrasi
+      tags:
+      - Auth
+  /auth/security-questions:
+    get:
+      description: Mengambil pertanyaan keamanan user berdasarkan email (tanpa jawaban)
+      parameters:
+      - description: Email pengguna
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Ambil pertanyaan keamanan
+      tags:
+      - Auth
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan 2 pertanyaan keamanan untuk pemulihan akun (digunakan
+        setelah registrasi)
+      parameters:
+      - description: Pertanyaan dan jawaban keamanan
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SaveSecurityQuestionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Simpan pertanyaan keamanan
+      tags:
+      - Auth
   /auth/sessions:
     get:
       description: Mengembalikan semua sesi login yang sedang aktif
@@ -619,6 +756,75 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
       summary: Verifikasi OTP dan login
+      tags:
+      - Auth
+  /auth/verify-register-otp:
+    post:
+      consumes:
+      - application/json
+      description: Memverifikasi kode OTP yang dikirim saat registrasi untuk mengaktifkan
+        akun
+      parameters:
+      - description: Email dan OTP
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifyRegisterOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Verifikasi OTP registrasi
+      tags:
+      - Auth
+  /auth/verify-security-answers:
+    post:
+      consumes:
+      - application/json
+      description: Memverifikasi jawaban pertanyaan keamanan untuk pemulihan akun
+      parameters:
+      - description: Email dan jawaban
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifySecurityAnswersRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Verifikasi jawaban keamanan
       tags:
       - Auth
 securityDefinitions:

@@ -670,6 +670,144 @@
                 }
             }
         },
+        "/auth/resend-register-otp": {
+            "post": {
+                "description": "Mengirim ulang kode OTP untuk verifikasi email saat registrasi",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Kirim ulang OTP registrasi",
+                "parameters": [
+                    {
+                        "description": "Email",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ResendRegisterOtpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/security-questions": {
+            "get": {
+                "description": "Mengambil pertanyaan keamanan user berdasarkan email (tanpa jawaban)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Ambil pertanyaan keamanan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email pengguna",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menyimpan 2 pertanyaan keamanan untuk pemulihan akun (digunakan setelah registrasi)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Simpan pertanyaan keamanan",
+                "parameters": [
+                    {
+                        "description": "Pertanyaan dan jawaban keamanan",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SaveSecurityQuestionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/sessions": {
             "get": {
                 "security": [
@@ -852,6 +990,110 @@
                     }
                 }
             }
+        },
+        "/auth/verify-register-otp": {
+            "post": {
+                "description": "Memverifikasi kode OTP yang dikirim saat registrasi untuk mengaktifkan akun",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verifikasi OTP registrasi",
+                "parameters": [
+                    {
+                        "description": "Email dan OTP",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.VerifyRegisterOtpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify-security-answers": {
+            "post": {
+                "description": "Memverifikasi jawaban pertanyaan keamanan untuk pemulihan akun",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verifikasi jawaban keamanan",
+                "parameters": [
+                    {
+                        "description": "Email dan jawaban",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.VerifySecurityAnswersRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -906,6 +1148,70 @@
         "handlers.RequestOtpRequest": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "fathan@example.com"
+                }
+            }
+        },
+        "handlers.ResendRegisterOtpRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "fathan@example.com"
+                }
+            }
+        },
+        "handlers.SaveSecurityQuestionsRequest": {
+            "type": "object",
+            "properties": {
+                "answer1": {
+                    "type": "string",
+                    "example": "Jakarta"
+                },
+                "answer2": {
+                    "type": "string",
+                    "example": "Milo"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "fathan@example.com"
+                },
+                "question1": {
+                    "type": "string",
+                    "example": "Di kota mana Anda lahir?"
+                },
+                "question2": {
+                    "type": "string",
+                    "example": "Apa nama hewan peliharaan pertama Anda?"
+                }
+            }
+        },
+        "handlers.VerifyRegisterOtpRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "fathan@example.com"
+                },
+                "otp": {
+                    "type": "string",
+                    "example": "1234"
+                }
+            }
+        },
+        "handlers.VerifySecurityAnswersRequest": {
+            "type": "object",
+            "properties": {
+                "answer1": {
+                    "type": "string",
+                    "example": "Jakarta"
+                },
+                "answer2": {
+                    "type": "string",
+                    "example": "Milo"
+                },
                 "email": {
                     "type": "string",
                     "example": "fathan@example.com"
