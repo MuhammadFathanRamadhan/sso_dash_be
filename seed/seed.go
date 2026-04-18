@@ -1,5 +1,5 @@
 // Seed database dengan 12 aplikasi BOMA.
-// Jalankan: go run seed/seed.go
+// Jalankan: jangan lupa go run seed/seed.go
 package main
 
 import (
